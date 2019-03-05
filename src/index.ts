@@ -1,5 +1,6 @@
 import { Context, Handler } from 'http2-router';
 import { http2jsonSend } from 'http2-json-send';
+import { Readable } from 'stream';
 
 export interface http2Pier extends Handler {
   /** input */
@@ -12,10 +13,28 @@ export interface http2Pier extends Handler {
   d?: string;
 }
 
-export function http2Pier( handler: Handler ): http2Pier {
+export enum http2PierSend {
+  none,
+  json,
+  stream
+};
+
+
+export function http2Pier(
+  handler: Handler,
+  send: http2PierSend = http2PierSend.none
+): http2Pier {
   return async ( ctx: Context ) => {
     try {
-      await handler( ctx );
+      const output = await handler( ctx );
+      switch ( send ) {
+        case http2PierSend.json:
+          await http2jsonSend( ctx.res, output );
+          break;
+        case http2PierSend.stream:
+          ( output as Readable ).pipe( ctx.res.stream );
+          break;
+      }
     } catch ( e ) {
       await http2jsonSend( ctx.res, e, e.statusCode || 500 );
     }
