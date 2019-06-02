@@ -13,7 +13,7 @@ export interface http2Pier extends Handler {
   d?: string;
 }
 
-export enum http2PierSend {
+export const enum http2PierSend {
   none,
   json,
   stream
